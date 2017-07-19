@@ -1,0 +1,2 @@
+一个编程模板，实现类型windows service的功能
+结合Xiaolei.ServicePacker  可以实现通过编写控制台程序来实现windows service的功能，并部署
