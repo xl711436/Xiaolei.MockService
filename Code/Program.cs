@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -17,16 +18,24 @@ namespace Xiaolei.MockService
 
         public static int MessageCode_Stop = 0x80F0;
 
+        public static string CurrentProcessPath = string.Empty;
+
+        public static string MutexName =  ConfigurationManager.AppSettings["MutexName"];
+
         static void Main(string[] args)
         {
+
+            CurrentProcessPath = Process.GetCurrentProcess().MainModule.FileName;
+            System.Diagnostics.Trace.WriteLine(CurrentProcessPath);
             if (args.Length == 1)
             {
                 if (args[0].ToLower() == "start")
-                {
+                { 
                     bool createdNew;
-                    System.Threading.Mutex instance = new System.Threading.Mutex(true, "MockService", out createdNew);
+                    System.Threading.Mutex instance = new System.Threading.Mutex(true, MutexName, out createdNew);
                     if (createdNew)
                     {
+                        TraceHelper.TraceInfo("start mutex in");
                         MockServcieInstance curInstance = new MockServcieInstance();
                         curInstance.ExitFlag = false; 
                         Application.AddMessageFilter(new MsgFilter(curInstance));
@@ -34,39 +43,51 @@ namespace Xiaolei.MockService
 
                         //维持循环，接收推出消息
                         while (!curInstance.ExitFlag)
-                        {
+                        { 
                             Application.DoEvents();
                             System.Threading.Thread.Sleep(1000);
-                        }
+                        } 
+
+                        TraceHelper.TraceInfo("ReleaseMutex");
                         instance.ReleaseMutex();
                     }
                     else
                     {
-                        TraceHelper.TraceInfo("MockService Started "); 
+                     
                     }
                 }
 
                 if (args[0].ToLower() == "stop")
                 {
-
+       
                     bool createdNew;
-                    System.Threading.Mutex instance = new System.Threading.Mutex(true, "SingletonForm", out createdNew);
+                    System.Threading.Mutex instance = new System.Threading.Mutex(true, MutexName, out createdNew);
                     if (createdNew)
                     {
-                        TraceHelper.TraceInfo("MockService not Start ,start it frist");
-                        instance.ReleaseMutex();
+                        TraceHelper.TraceInfo("stop mutex   in");
+                        instance.ReleaseMutex(); 
                     }
                     else
                     {
-                        TraceHelper.TraceInfo(" Post Message to Stop MockService");
-                        Process[] curProcessArray = Process.GetProcessesByName("SingletonForm");
-
+                        TraceHelper.TraceInfo("stop mutex  not in");
+                        Process[] curProcessArray = Process.GetProcesses();
+                       
                         foreach (Process curProcess in curProcessArray)
                         {
-                            TraceHelper.TraceInfo(" curProcess Id: " + curProcess.Id);
-                            PostThreadMessage(curProcess.Threads[0].Id, (uint)MessageCode_Stop, IntPtr.Zero, IntPtr.Zero);
+                            try
+                            { 
+                                if (curProcess.MainModule.FileName == CurrentProcessPath)
+                                { 
+                                    System.Diagnostics.Trace.WriteLine("post stop message " + curProcess.Id);
+                                    PostThreadMessage(curProcess.Threads[0].Id, (uint)MessageCode_Stop, IntPtr.Zero, IntPtr.Zero);
+                                }
+                            }
+                            catch  
+                            {
+                               
+                            }
                         }
-                         
+                        TraceHelper.TraceInfo("exit"); 
                         Application.Exit();
                     }
                 }
@@ -89,7 +110,8 @@ namespace Xiaolei.MockService
         {
             //如果收到退出消息，退出程序
             if (m.Msg == Program.MessageCode_Stop)
-            { 
+            {
+                System.Diagnostics.Trace.WriteLine("receive stop message");
                 curInstance.Stop();
                 curInstance.ExitFlag = true;
 

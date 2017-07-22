@@ -17,17 +17,17 @@ namespace Xiaolei.MockService
 
         public MockServcieInstance()
         {
-            TraceHelper.TraceInfo("Servcie Init ");
+         TraceHelper.TraceInfo("MockServcie Instance");
         }
 
         public void Start()
         {
-            TraceHelper.TraceInfo("Servcie Start");
+            TraceHelper.TraceInfo("MockServcie Start");
         }
 
         public void Stop()
         {
-            TraceHelper.TraceInfo("Servcie Stop"); 
+            TraceHelper.TraceInfo("MockServcie Stop");
         }
 
     }
