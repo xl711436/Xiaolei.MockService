@@ -28,7 +28,7 @@ namespace Xiaolei.MockService
         public void Stop()
         {
             TraceHelper.TraceInfo("MockServcie Stop");
-        }
-
+        } 
     }
+
 }
